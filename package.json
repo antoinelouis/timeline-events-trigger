@@ -1,0 +1,27 @@
+{
+  "name": "timeline-events-trigger",
+  "version": "1.0.0",
+  "description": "Trigger a sequence of DOM events based on a timeline",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/antoinelouis/timeline-events-trigger.git"
+  },
+  "keywords": [
+    "timeline",
+    "events",
+    "javascript",
+    "dom",
+    "events",
+    "sequence"
+  ],
+  "author": "Antoine Louis Prévost <hi@antoinelouis.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/antoinelouis/timeline-events-trigger/issues"
+  },
+  "homepage": "https://github.com/antoinelouis/timeline-events-trigger#readme"
+}
