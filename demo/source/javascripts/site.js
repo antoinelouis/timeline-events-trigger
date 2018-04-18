@@ -11,11 +11,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
     e.target.innerHTML += " clicked";
   })
 
-  if (window.confirm("Trigger events sequence?")) { 
-    console.log('trigger events');
-    timeline.executeTimeline();
-  }
-
   timeline.addKey("click", 4000, {
     target: clickTarget,
     duration: 1000
@@ -25,6 +20,11 @@ document.addEventListener("DOMContentLoaded", function(event) {
     scrollTo: 400,
     duration: 1000
   })
+
+  if (window.confirm("Trigger events sequence?")) { 
+    console.log('trigger events');
+    timeline.executeTimeline();
+  }
 });
 
 
@@ -58,13 +58,13 @@ TimelineEventsTrigger.prototype.executeTimeline = function(i){
   console.log(this.keys.length);
   var i = i || 0;
   if (i >= this.keys.length) return;
-  this.keys[i].executeKey(this.executeTimeline(i+1));
+  this.keys[i].executeKey(this, i+1);
 };
 
-TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb){
+TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
   console.log('executeKey');
   console.log(this.eventType);
   window.setTimeout(function(){
-    cb();
+    cb.executeTimeline(index);
   }, this.duration)
 };
