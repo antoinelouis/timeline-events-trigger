@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/antoinelouis/timeline-events-trigger/issues"
   },
-  "homepage": "https://github.com/antoinelouis/timeline-events-trigger#readme"
+  "homepage": "https://github.com/antoinelouis/timeline-events-trigger#readme",
+  "dependencies": {
+    "smooth-scroll": "12.1.5"
+  }
 }

@@ -1,5 +1,4 @@
-// This is where it all goes :)
-
+//= require 'smooth-scroll/dist/js/smooth-scroll'
 
 document.addEventListener("DOMContentLoaded", function(event) { 
   const timeline = new TimelineEventsTrigger;
@@ -18,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
   timeline.addKey("scroll", 2000, {
     scrollTo: 400,
-    duration: 1000
+    duration: 4000
   })
 
   if (window.confirm("Trigger events sequence?")) { 
@@ -41,30 +40,42 @@ const TimelineEventsTrigger = function(){
 };
 
 
-// Turn keys into objects 😯
-TimelineEventsTrigger.prototype.Key = function(eventType, duration, options) {
+// Turn keys into embed objects 😯
+TimelineEventsTrigger.prototype.Key = function(eventType, delay, options) {
   this.eventType = eventType;
-  this.duration = duration || 1000;
+  this.delay = delay || 1000;
   this.options = options || {};
 };
 
-TimelineEventsTrigger.prototype.addKey = function(eventType, duration, options) {
-  this.keys[this.keys.length] = new this.Key(eventType, duration, options);
+TimelineEventsTrigger.prototype.addKey = function(eventType, delay, options) {
+  this.keys[this.keys.length] = new this.Key(eventType, delay, options);
 };
 
 TimelineEventsTrigger.prototype.executeTimeline = function(i){
-  console.log('execute sequences');
-  console.dir(this);
-  console.log(this.keys.length);
   var i = i || 0;
   if (i >= this.keys.length) return;
   this.keys[i].executeKey(this, i+1);
 };
 
 TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
-  console.log('executeKey');
-  console.log(this.eventType);
+  var eventtype = this.eventType;
+  var options = this.options;
   window.setTimeout(function(){
+    console.log(eventtype);
+    switch (eventtype){
+      case 'click':
+        var newEvent =  new MouseEvent("click", {
+          bubbles: true,
+          cancelable: false,
+          view: window
+        });
+        options.target.dispatchEvent(newEvent);
+        break;
+      case 'scroll':
+        var scroll = new SmoothScroll();
+        scroll.animateScroll( options.scrollTo, null, {speed: options.duration});
+        break;
+    }
     cb.executeTimeline(index);
-  }, this.duration)
+  }, this.delay)
 };

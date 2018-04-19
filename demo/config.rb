@@ -5,6 +5,9 @@ activate :autoprefixer do |prefix|
   prefix.browsers = "last 2 versions"
 end
 
+activate :sprockets
+sprockets.append_path "#{root}/../node_modules"
+
 # Layouts
 # https://middlemanapp.com/basics/layouts/
 
