@@ -5,14 +5,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
   const timeline = new TimelineEventsTrigger;
   var clickTarget = document.querySelector('.btn');
 
-  clickTarget.addEventListener('mouseenter', function(e){
-    console.log(e);
-    console.dir(e);
-  });
-  clickTarget.addEventListener('mousemove', function(e){
-    console.log(e);
-    console.dir(e);
-  });
   clickTarget.addEventListener('click', function(e){
     e.preventDefault();
     console.log('click');
@@ -36,28 +28,41 @@ document.addEventListener("DOMContentLoaded", function(event) {
 });
 
 
-
-
-
-
-
-
 /* TET LIBRARY */
 
 const TimelineEventsTrigger = function(){
   this.keys = [];
+  this.styles = this.storeHoverStyle();
 };
 
 
 // Turn keys into embed objects 😯
-TimelineEventsTrigger.prototype.Key = function(eventType, delay, options) {
+TimelineEventsTrigger.prototype.Key = function(eventType, delay, options, parent) {
   this.eventType = eventType;
   this.delay = delay || 1000;
   this.options = options || {};
+  this.parent = parent;
 };
 
+TimelineEventsTrigger.prototype.storeHoverStyle = function() {
+  var styles = document.styleSheets;
+  var stylesLength = styles.length;
+  var hoverRules = [];
+  for(var i=0; i<stylesLength; i++) {
+    var rules = styles[i].cssRules;
+    var rulesLength = rules.length;
+    for(var j=0; j<rulesLength; j++) {
+      if(rules[j].selectorText && (rules[j].selectorText.indexOf(':hover') !== -1)) {
+        hoverRules.push(rules[j]);
+      }
+    }
+  }
+  console.log(hoverRules);
+  return hoverRules;
+}
+
 TimelineEventsTrigger.prototype.addKey = function(eventType, delay, options) {
-  this.keys[this.keys.length] = new this.Key(eventType, delay, options);
+  this.keys[this.keys.length] = new this.Key(eventType, delay, options, this);
 };
 
 TimelineEventsTrigger.prototype.executeTimeline = function(i){
@@ -67,6 +72,7 @@ TimelineEventsTrigger.prototype.executeTimeline = function(i){
 };
 
 TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
+  var self = this;
   var eventtype = this.eventType;
   var options = this.options;
   window.setTimeout(function(){
@@ -92,23 +98,16 @@ TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
         });
         options.target.dispatchEvent(hover);
 
-        function getCssPropertyForRule(rule) {
-          var sheets = document.styleSheets;
-          var slen = sheets.length;
-          for(var i=0; i<slen; i++) {
-            var rules = sheets[i].cssRules;
-            var rlen = rules.length;
-            for(var j=0; j<rlen; j++) {
-              if(rules[j].selectorText == rule) {
-                return rules[j].style;
-              }
-            }
+        var foo = self.parent.styles.filter(function(row){
+          return row.selectorText.indexOf(options.target.tagName.toLowerCase()+":hover") !== -1
+        });
+        for (var i = 0; i < foo.length; i++) {
+          for (var j = 0; j < foo[i].style.length; j++) {
+            console.log(foo[i].style[j]);
+            var cssAttr = foo[i].style[j];
+            options.target.style[cssAttr] = foo[i].style[cssAttr];
           }
         }
-
-        var foo = getCssPropertyForRule(options.target.tagName.toLowerCase()+':hover');
-        var cssAttr = foo[0];
-        options.target.style[cssAttr] = foo[cssAttr];
 
         break;
     }

@@ -19,11 +19,17 @@ body, div
 p 
   max-width: 420px
   margin: 0 auto 20px
+  &:hover
+    z-index: 2
 
 a
   color: rgba(#000, 0.7)
-  &:hover
+  transition: all .4s ease
+  &:hover,
+  &:focus
     color: red
+    opacity: .5
+    letter-spacing: 2px
 
 .middleman-logo
   margin-bottom: 1rem
