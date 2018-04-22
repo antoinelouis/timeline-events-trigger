@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
   clickTarget.addEventListener('click', function(e){
     e.preventDefault();
-    console.log('click');
     e.target.innerHTML += " clicked";
   })
 
@@ -21,8 +20,9 @@ document.addEventListener("DOMContentLoaded", function(event) {
     target: clickTarget
   })
 
+  timeline.addKey("leave", 1000)
+
   if (window.confirm("Trigger events sequence?")) { 
-    console.log('trigger events');
     timeline.executeTimeline();
   }
 });
@@ -57,7 +57,6 @@ TimelineEventsTrigger.prototype.storeHoverStyle = function() {
       }
     }
   }
-  console.log(hoverRules);
   return hoverRules;
 }
 
@@ -76,7 +75,6 @@ TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
   var eventtype = this.eventType;
   var options = this.options;
   window.setTimeout(function(){
-    console.log(eventtype);
     switch (eventtype){
       case 'click':
         var click =  new MouseEvent("click", {
@@ -91,24 +89,21 @@ TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
         scroll.animateScroll( options.scrollTo, null, {speed: options.duration});
         break;
       case 'hover':
-        var hover =  new MouseEvent("mouseenter", {
-          bubbles: true,
-          cancelable: true,
-          relatedTarget: document.querySelector('div.hero'),
-        });
-        options.target.dispatchEvent(hover);
-
-        var foo = self.parent.styles.filter(function(row){
+        var styles = self.parent.styles.filter(function(row){
           return row.selectorText.indexOf(options.target.tagName.toLowerCase()+":hover") !== -1
         });
-        for (var i = 0; i < foo.length; i++) {
-          for (var j = 0; j < foo[i].style.length; j++) {
-            console.log(foo[i].style[j]);
-            var cssAttr = foo[i].style[j];
-            options.target.style[cssAttr] = foo[i].style[cssAttr];
+        for (var i = 0; i < styles.length; i++) { // for each matching selector
+          for (var j = 0; j < styles[i].style.length; j++) { // for each property
+            var cssProperty = styles[i].style[j];
+            options.target.style[cssProperty] = styles[i].style[cssProperty];
           }
         }
+        self.parent.hoveredElement = options.target;
+        break;
 
+      case 'leave':
+        if(! self.parent.hoveredElement) return;
+        self.parent.hoveredElement.style = "";
         break;
     }
     cb.executeTimeline(index);
