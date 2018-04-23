@@ -1,4 +1,5 @@
 //= require 'smooth-scroll/dist/js/smooth-scroll'
+//= require 'easing.js'
 
 document.addEventListener("DOMContentLoaded", function(event) { 
 
@@ -16,7 +17,7 @@ document.addEventListener("DOMContentLoaded", function(event) {
     duration: 500
   })
 
-  timeline.addKey("hover", 1000, {
+  timeline.addKey("hover", 3000, {
     target: clickTarget
   })
 
@@ -33,6 +34,9 @@ document.addEventListener("DOMContentLoaded", function(event) {
 const TimelineEventsTrigger = function(){
   this.keys = [];
   this.styles = this.storeHoverStyle();
+  this.cursor = document.createElement('DIV');
+  this.cursor.id = "timelinecursor";
+  document.body.appendChild(this.cursor); 
 };
 
 
@@ -42,6 +46,26 @@ TimelineEventsTrigger.prototype.Key = function(eventType, delay, options, parent
   this.delay = delay || 1000;
   this.options = options || {};
   this.parent = parent;
+};
+
+TimelineEventsTrigger.prototype.moveMouse = function(x, y, t) {
+  console.log(this);
+  console.log(x);
+  console.log(y);
+  var self = this;
+  var start = null;
+
+  function step(timestamp) {
+    if (!start) start = timestamp;
+    var progress = Math.min((timestamp - start) / t, 1);
+    console.log(progress);
+    self.cursor.style.left = (x - Math.abs(self.cursor.offsetLeft - x) * (1 - progress)) + 'px';
+    self.cursor.style.top = (y - Math.abs(self.cursor.offsetTop - y) * (1 - progress)) + 'px';
+    if (progress < 1) {
+      window.requestAnimationFrame(step);
+    }
+  }
+  window.requestAnimationFrame(step);
 };
 
 TimelineEventsTrigger.prototype.storeHoverStyle = function() {
@@ -74,6 +98,10 @@ TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
   var self = this;
   var eventtype = this.eventType;
   var options = this.options;
+  if(eventtype === 'hover') this.parent.moveMouse(
+    options.target.offsetLeft + (options.target.offsetWidth / 2),
+    options.target.offsetTop + (options.target.offsetHeight / 2) - window.pageYOffset,
+    this.delay);
   window.setTimeout(function(){
     switch (eventtype){
       case 'click':
