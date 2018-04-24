@@ -11,13 +11,12 @@ document.addEventListener("DOMContentLoaded", function(event) {
     e.target.innerHTML += " clicked";
   })
 
-
   timeline.addKey("scroll", 1000, {
     scrollTo: 100,
     duration: 500
   })
 
-  timeline.addKey("hover", 3000, {
+  timeline.addKey("hover", 1000, {
     target: clickTarget
   })
 
@@ -49,18 +48,17 @@ TimelineEventsTrigger.prototype.Key = function(eventType, delay, options, parent
 };
 
 TimelineEventsTrigger.prototype.moveMouse = function(x, y, t) {
-  console.log(this);
-  console.log(x);
-  console.log(y);
   var self = this;
+  var startX = self.cursor.offsetLeft;
+  var startY = self.cursor.offsetTop;
   var start = null;
 
   function step(timestamp) {
     if (!start) start = timestamp;
     var progress = Math.min((timestamp - start) / t, 1);
-    console.log(progress);
-    self.cursor.style.left = (x - Math.abs(self.cursor.offsetLeft - x) * (1 - progress)) + 'px';
-    self.cursor.style.top = (y - Math.abs(self.cursor.offsetTop - y) * (1 - progress)) + 'px';
+    var delta = EasingFunctions.easeOutQuad(progress);
+    self.cursor.style.left = (startX - (startX - x) * delta) + 'px';
+    self.cursor.style.top = (startY - (startY - y) * delta) + 'px';
     if (progress < 1) {
       window.requestAnimationFrame(step);
     }
@@ -94,30 +92,30 @@ TimelineEventsTrigger.prototype.executeTimeline = function(i){
   this.keys[i].executeKey(this, i+1);
 };
 
-TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
+TimelineEventsTrigger.prototype.getEventTrigger = function(eventtype, options){
   var self = this;
-  var eventtype = this.eventType;
-  var options = this.options;
-  if(eventtype === 'hover') this.parent.moveMouse(
-    options.target.offsetLeft + (options.target.offsetWidth / 2),
-    options.target.offsetTop + (options.target.offsetHeight / 2) - window.pageYOffset,
-    this.delay);
-  window.setTimeout(function(){
-    switch (eventtype){
-      case 'click':
+  switch (eventtype){
+    case 'click':
+      return function(){
         var click =  new MouseEvent("click", {
           bubbles: true,
           cancelable: false,
           view: window
         });
         options.target.dispatchEvent(click);
-        break;
-      case 'scroll':
-        var scroll = new SmoothScroll();
+      };
+      break;
+
+    case 'scroll':
+      var scroll = new SmoothScroll();
+      return function(){
         scroll.animateScroll( options.scrollTo, null, {speed: options.duration});
-        break;
-      case 'hover':
-        var styles = self.parent.styles.filter(function(row){
+      };
+      break;
+
+    case 'hover':
+      return function(){
+        var styles = self.styles.filter(function(row){
           return row.selectorText.indexOf(options.target.tagName.toLowerCase()+":hover") !== -1
         });
         for (var i = 0; i < styles.length; i++) { // for each matching selector
@@ -126,14 +124,32 @@ TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
             options.target.style[cssProperty] = styles[i].style[cssProperty];
           }
         }
-        self.parent.hoveredElement = options.target;
-        break;
+        self.hoveredElement = options.target;
+      }
+      break;
 
-      case 'leave':
-        if(! self.parent.hoveredElement) return;
-        self.parent.hoveredElement.style = "";
-        break;
-    }
+    case 'leave':
+      return function(){
+        if(! self.hoveredElement) return;
+        self.hoveredElement.style = "";        
+      }
+      break;
+  }
+};
+
+TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
+  var self = this;
+  var eventtype = this.eventType;
+  var options = this.options;
+  var trigger = this.parent.getEventTrigger(eventtype, options);
+  if(eventtype === 'hover') {
+    this.parent.moveMouse(
+    options.target.offsetLeft + (options.target.offsetWidth / 2),
+    options.target.offsetTop + (options.target.offsetHeight / 2) - window.pageYOffset,
+    this.delay)
+  };
+  window.setTimeout(function(){
+    trigger();
     cb.executeTimeline(index);
-  }, this.delay)
+  }, this.delay);
 };
