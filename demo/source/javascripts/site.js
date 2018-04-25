@@ -16,16 +16,25 @@ document.addEventListener("DOMContentLoaded", function(event) {
     duration: 500
   })
 
-  timeline.addKey("hover", 1000, {
-    target: clickTarget
+  timeline.addKey("hover", 2000, {
+    target: clickTarget,
+    duration: 500
   })
 
-  timeline.addKey("leave", 1000)
+  timeline.addKey("leave", 3000)
 
   if (window.confirm("Trigger events sequence?")) { 
     timeline.executeTimeline();
   }
 });
+
+
+
+
+
+
+
+
 
 
 /* TET LIBRARY */
@@ -36,6 +45,9 @@ const TimelineEventsTrigger = function(){
   this.cursor = document.createElement('DIV');
   this.cursor.id = "timelinecursor";
   document.body.appendChild(this.cursor); 
+  this.options = {
+    relative: false
+  }
 };
 
 
@@ -124,6 +136,7 @@ TimelineEventsTrigger.prototype.getEventTrigger = function(eventtype, options){
             options.target.style[cssProperty] = styles[i].style[cssProperty];
           }
         }
+        self.cursor.className = "hover";
         self.hoveredElement = options.target;
       }
       break;
@@ -131,7 +144,7 @@ TimelineEventsTrigger.prototype.getEventTrigger = function(eventtype, options){
     case 'leave':
       return function(){
         if(! self.hoveredElement) return;
-        self.hoveredElement.style = "";        
+        self.hoveredElement.style = "";
       }
       break;
   }
@@ -143,13 +156,16 @@ TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
   var options = this.options;
   var trigger = this.parent.getEventTrigger(eventtype, options);
   if(eventtype === 'hover') {
-    this.parent.moveMouse(
-    options.target.offsetLeft + (options.target.offsetWidth / 2),
-    options.target.offsetTop + (options.target.offsetHeight / 2) - window.pageYOffset,
-    this.delay)
+    window.setTimeout(function(){
+      self.parent.moveMouse(
+      options.target.offsetLeft + (options.target.offsetWidth / 2),
+      options.target.offsetTop + (options.target.offsetHeight / 2) - window.pageYOffset,
+      self.options.duration)
+    }, self.delay - self.options.duration);
   };
+  if(! this.parent.options.relative) cb.executeTimeline(index);
   window.setTimeout(function(){
     trigger();
-    cb.executeTimeline(index);
+    if(self.parent.options.relative) cb.executeTimeline(index);
   }, this.delay);
 };
