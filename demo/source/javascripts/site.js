@@ -46,7 +46,8 @@ const TimelineEventsTrigger = function(){
   this.cursor.id = "timelinecursor";
   document.body.appendChild(this.cursor); 
   this.options = {
-    relative: false
+    relative: false,
+    defaultMousePos: {x:50, y:50}
   }
 };
 
@@ -59,7 +60,7 @@ TimelineEventsTrigger.prototype.Key = function(eventType, delay, options, parent
   this.parent = parent;
 };
 
-TimelineEventsTrigger.prototype.moveMouse = function(x, y, t) {
+TimelineEventsTrigger.prototype.moveMouse = function(x = this.options.defaultMousePos.x, y = this.options.defaultMousePos.y, t = 0) {
   var self = this;
   var startX = self.cursor.offsetLeft;
   var startY = self.cursor.offsetTop;
@@ -67,7 +68,7 @@ TimelineEventsTrigger.prototype.moveMouse = function(x, y, t) {
 
   function step(timestamp) {
     if (!start) start = timestamp;
-    var progress = Math.min((timestamp - start) / t, 1);
+    var progress = t === 0 ? 1 : Math.min((timestamp - start) / t, 1);
     var delta = EasingFunctions.easeOutQuad(progress);
     self.cursor.style.left = (startX - (startX - x) * delta) + 'px';
     self.cursor.style.top = (startY - (startY - y) * delta) + 'px';
@@ -145,13 +146,17 @@ TimelineEventsTrigger.prototype.getEventTrigger = function(eventtype, options){
       return function(){
         if(! self.hoveredElement) return;
         self.hoveredElement.style = "";
+        self.cursor.className = "";
+        self.moveMouse(undefined, undefined, t = 1000);
       }
       break;
   }
 };
 
 TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
+
   var self = this;
+  self.parent.moveMouse();
   var eventtype = this.eventType;
   var options = this.options;
   var trigger = this.parent.getEventTrigger(eventtype, options);
