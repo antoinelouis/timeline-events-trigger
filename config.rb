@@ -6,7 +6,7 @@ activate :autoprefixer do |prefix|
 end
 
 activate :sprockets
-sprockets.append_path "#{root}/../node_modules"
+sprockets.append_path "#{root}/node_modules"
 
 # Layouts
 # https://middlemanapp.com/basics/layouts/
