@@ -36,57 +36,60 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
 
 
+/*
+**
+** TET LIBRARY
+**
+*/
 
-/* TET LIBRARY */
 
-const TimelineEventsTrigger = function(){
-  var self = this;
+
+/*
+** TIMELINE CONSTRUCTOR + PROTOTYPE METHODS 
+*/
+
+const TimelineEventsTrigger = function(options = {}){
+  let self = this;
+  let defaults = {
+    relative        : false,
+    defaultMousePos : {x:50, y:50}
+  }
+  this.options = Object.assign({}, defaults, options);
   this.hoverElements = [];
   this.keys = [];
   this.styles = this.storeHoverStyle();
+  this.styles.forEach(function(style){
+    var elements = style.selectorText
+            .trim(style.selectorText.indexOf('{'))
+            .split(', ')
+            .filter(function(pseudoClass){
+              return pseudoClass.indexOf('hover') !== -1;
+            })
+            .map(function(selector){
+              selector = selector.slice(0, selector.indexOf(':'));
+              return Array.prototype.slice.call(document.querySelectorAll(selector));
+            });
+    if (elements[0].length) {
+      elements[0].forEach(function(el){self.hoverElements.push(el)});
+    }
+  })
 
-    this.styles.forEach(function(style){
-      var elements = style.selectorText
-              .trim(style.selectorText.indexOf('{'))
-              .split(', ')
-              .filter(function(pseudoClass){
-                return pseudoClass.indexOf('hover') !== -1;
-              })
-              .map(function(selector){
-                selector = selector.slice(0, selector.indexOf(':'));
-                return Array.prototype.slice.call(document.querySelectorAll(selector));
-              });
-      if (elements[0].length) {
-        elements[0].forEach(function(el){self.hoverElements.push(el)});
-      }
-    })
   this.hoverPositions = self.hoverElements.map(function(el){
     var pos = {};
+    pos.target = el;
     pos.top = el.offsetTop;
     pos.bottom = pos.top + el.offsetHeight;
     pos.left = el.offsetLeft;
     pos.right = pos.left + el.offsetWidth;
     return pos;
   });
-  console.log(this.hoverPositions);
 
   this.cursor = document.createElement('DIV');
   this.cursor.id = "timelinecursor";
-  document.body.appendChild(this.cursor); 
-  this.options = {
-    relative: false,
-    defaultMousePos: {x:50, y:50}
-  }
+  document.body.appendChild(this.cursor);
 };
 
 
-// Turn keys into embed objects 😯
-TimelineEventsTrigger.prototype.Key = function(eventType, delay, options, parent) {
-  this.eventType = eventType;
-  this.delay = delay || 1000;
-  this.options = options || {};
-  this.parent = parent;
-};
 
 TimelineEventsTrigger.prototype.moveMouse = function(x = this.options.defaultMousePos.x, y = this.options.defaultMousePos.y, t = 0) {
   var self = this;
@@ -98,8 +101,22 @@ TimelineEventsTrigger.prototype.moveMouse = function(x = this.options.defaultMou
     if (!start) start = timestamp;
     var progress = t === 0 ? 1 : Math.min((timestamp - start) / t, 1);
     var delta = EasingFunctions.easeOutQuad(progress);
-    self.cursor.style.left = (startX - (startX - x) * delta) + 'px';
-    self.cursor.style.top = (startY - (startY - y) * delta) + 'px';
+    var scroll = window.pageYOffset
+    var left = Math.floor(startX - (startX - x) * delta);
+    var top = Math.floor(startY - (startY - y) * delta);
+    // check if any hoverable element has matching position with the mouse
+    var hoveredEl = self.hoverPositions.find(function(element) {
+      return element.top - scroll < top
+          && top < element.bottom - scroll
+          && element.left < left
+          && left < element.right;
+    });
+    self.cursor.style.left = left + 'px';
+    self.cursor.style.top = top + 'px';
+    console.log(hoveredEl);
+    if (hoveredEl) {
+      self.hover(hoveredEl.target);
+    };
     if (progress < 1) {
       window.requestAnimationFrame(step);
     }
@@ -123,6 +140,20 @@ TimelineEventsTrigger.prototype.storeHoverStyle = function() {
   return hoverRules;
 }
 
+TimelineEventsTrigger.prototype.hover = function(target) {
+  var styles = this.styles.filter(function(row){
+    return row.selectorText.indexOf(target.tagName.toLowerCase()+":hover") !== -1
+  });
+  for (var i = 0; i < styles.length; i++) { // for each matching selector
+    for (var j = 0; j < styles[i].style.length; j++) { // for each property
+      var cssProperty = styles[i].style[j];
+      target.style[cssProperty] = styles[i].style[cssProperty];
+    }
+  }
+  this.cursor.className = "hover";
+  this.hoveredElement = target;
+}
+
 TimelineEventsTrigger.prototype.addKey = function(eventType, delay, options) {
   this.keys[this.keys.length] = new this.Key(eventType, delay, options, this);
 };
@@ -132,6 +163,10 @@ TimelineEventsTrigger.prototype.executeTimeline = function(i){
   if (i >= this.keys.length) return;
   this.keys[i].executeKey(this, i+1);
 };
+
+/*
+** Event emulator
+*/
 
 TimelineEventsTrigger.prototype.getEventTrigger = function(eventtype, options){
   var self = this;
@@ -156,17 +191,17 @@ TimelineEventsTrigger.prototype.getEventTrigger = function(eventtype, options){
 
     case 'hover':
       return function(){
-        var styles = self.styles.filter(function(row){
-          return row.selectorText.indexOf(options.target.tagName.toLowerCase()+":hover") !== -1
-        });
-        for (var i = 0; i < styles.length; i++) { // for each matching selector
-          for (var j = 0; j < styles[i].style.length; j++) { // for each property
-            var cssProperty = styles[i].style[j];
-            options.target.style[cssProperty] = styles[i].style[cssProperty];
-          }
-        }
-        self.cursor.className = "hover";
-        self.hoveredElement = options.target;
+        // var styles = self.styles.filter(function(row){
+        //   return row.selectorText.indexOf(options.target.tagName.toLowerCase()+":hover") !== -1
+        // });
+        // for (var i = 0; i < styles.length; i++) { // for each matching selector
+        //   for (var j = 0; j < styles[i].style.length; j++) { // for each property
+        //     var cssProperty = styles[i].style[j];
+        //     options.target.style[cssProperty] = styles[i].style[cssProperty];
+        //   }
+        // }
+        // self.cursor.className = "hover";
+        // self.hoveredElement = options.target;
       }
       break;
 
@@ -179,6 +214,18 @@ TimelineEventsTrigger.prototype.getEventTrigger = function(eventtype, options){
       }
       break;
   }
+};
+
+/*
+** KEY CONSTRUCTOR + PROTOTYPE METHODS 
+*/
+
+// Turn keys into embed objects 😯
+TimelineEventsTrigger.prototype.Key = function(eventType, delay, options, parent) {
+  this.eventType = eventType;
+  this.delay = delay || 1000;
+  this.options = options || {};
+  this.parent = parent;
 };
 
 TimelineEventsTrigger.prototype.Key.prototype.executeKey = function(cb, index){
