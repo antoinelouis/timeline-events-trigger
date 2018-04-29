@@ -13,15 +13,15 @@ document.addEventListener("DOMContentLoaded", function(event) {
 
   timeline.addKey("scroll", 1000, {
     scrollTo: 100,
-    duration: 500
+    duration: 1500
   })
 
-  timeline.addKey("hover", 2000, {
+  timeline.addKey("hover", 3500, {
     target: clickTarget,
-    duration: 500
+    duration: 1000
   })
 
-  timeline.addKey("leave", 3000)
+  timeline.addKey("leave", 4000)
 
   if (window.confirm("Trigger events sequence?")) { 
     timeline.executeTimeline();
@@ -40,8 +40,36 @@ document.addEventListener("DOMContentLoaded", function(event) {
 /* TET LIBRARY */
 
 const TimelineEventsTrigger = function(){
+  var self = this;
+  this.hoverElements = [];
   this.keys = [];
   this.styles = this.storeHoverStyle();
+
+    this.styles.forEach(function(style){
+      var elements = style.selectorText
+              .trim(style.selectorText.indexOf('{'))
+              .split(', ')
+              .filter(function(pseudoClass){
+                return pseudoClass.indexOf('hover') !== -1;
+              })
+              .map(function(selector){
+                selector = selector.slice(0, selector.indexOf(':'));
+                return Array.prototype.slice.call(document.querySelectorAll(selector));
+              });
+      if (elements[0].length) {
+        elements[0].forEach(function(el){self.hoverElements.push(el)});
+      }
+    })
+  this.hoverPositions = self.hoverElements.map(function(el){
+    var pos = {};
+    pos.top = el.offsetTop;
+    pos.bottom = pos.top + el.offsetHeight;
+    pos.left = el.offsetLeft;
+    pos.right = pos.left + el.offsetWidth;
+    return pos;
+  });
+  console.log(this.hoverPositions);
+
   this.cursor = document.createElement('DIV');
   this.cursor.id = "timelinecursor";
   document.body.appendChild(this.cursor); 
