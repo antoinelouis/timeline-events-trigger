@@ -113,9 +113,12 @@ TimelineEventsTrigger.prototype.moveMouse = function(x = this.options.defaultMou
     });
     self.cursor.style.left = left + 'px';
     self.cursor.style.top = top + 'px';
-    console.log(hoveredEl);
-    if (hoveredEl) {
+    if (hoveredEl && hoveredEl.target !== self.hoveredElement) {
       self.hover(hoveredEl.target);
+    } else if (! hoveredEl) {
+      self.hoverElements.forEach(function(el){
+        el.style = "";
+      })
     };
     if (progress < 1) {
       window.requestAnimationFrame(step);
