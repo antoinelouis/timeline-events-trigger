@@ -184,59 +184,6 @@ class TimelineEventsTrigger {
     this.keys[i].executeKey(this, i+1);
   }
 
-
-  // /*
-  // ** Event emulator
-  // */
-
-  // getEventTrigger(eventtype, options){
-  //   var self = this;
-  //   switch (eventtype){
-  //     case 'click':
-  //       return function(){
-  //         var click =  new MouseEvent("click", {
-  //           bubbles: true,
-  //           cancelable: false,
-  //           view: window
-  //         });
-  //         options.target.dispatchEvent(click);
-  //       };
-  //       break;
-
-  //     case 'scroll':
-  //       var scroll = new SmoothScroll();
-  //       return function(){
-  //         scroll.animateScroll( options.scrollTo, null, {speed: options.duration});
-  //       };
-  //       break;
-
-  //     case 'hover':
-  //       return function(){
-  //         // var styles = self.styles.filter(function(row){
-  //         //   return row.selectorText.indexOf(options.target.tagName.toLowerCase()+":hover") !== -1
-  //         // });
-  //         // for (var i = 0; i < styles.length; i++) { // for each matching selector
-  //         //   for (var j = 0; j < styles[i].style.length; j++) { // for each property
-  //         //     var cssProperty = styles[i].style[j];
-  //         //     options.target.style[cssProperty] = styles[i].style[cssProperty];
-  //         //   }
-  //         // }
-  //         // self.cursor.className = "hover";
-  //         // self.hoveredElement = options.target;
-  //       }
-  //       break;
-
-  //     case 'leave':
-  //       return function(){
-  //         if(! self.hoveredElement) return;
-  //         self.hoveredElement.style = "";
-  //         self.cursor.className = "";
-  //         self.moveMouse(undefined, undefined, 1000);
-  //       }
-  //       break;
-  //   }
-  // };
-
 }
 
 
@@ -251,7 +198,6 @@ class Key {
     this.delay = delay || 1000;
     this.options = options || {};
     this.parent = parent;
-    console.log(this.parent);
     this.prior = false;
   }
 
@@ -259,7 +205,6 @@ class Key {
     var self = this;
     var options = this.options;
     var trigger = this.getEventTrigger(options);
-    console.log(this);
     if(self.prior) {
       window.setTimeout(function(){
         self.parent.moveMouse(
@@ -278,9 +223,6 @@ class Key {
 };
 
 class Click extends Key {
-  constructor(){
-    super();
-  }
   getEventTrigger(options){
     return function(){
       var click =  new MouseEvent("click", {
@@ -294,9 +236,6 @@ class Click extends Key {
 }
 
 class Scroll extends Key {
-  constructor(){
-    super();
-  }
   getEventTrigger(options){
     var scroll = new SmoothScroll();
     return function(){
@@ -306,8 +245,8 @@ class Scroll extends Key {
 }
 
 class Hover extends Key {
-  constructor(){
-    super();
+  constructor(delay, options, parent){
+    super(delay, options, parent);
     this.prior = true;
   }
   getEventTrigger(options){
@@ -317,11 +256,10 @@ class Hover extends Key {
 }
 
 class Leave extends Key {
-  constructor(){
-    super();
-  }
   getEventTrigger(options){
+    var self = this;
     return function(){
+      self.parent.moveMouse(undefined, undefined, 1000);
     }
   }
 }
