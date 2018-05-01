@@ -157,67 +157,85 @@ class TimelineEventsTrigger {
   }
 
   addKey(eventType, delay, options) {
-    this.keys[this.keys.length] = new Key(eventType, delay, options, this);
+    var self = this;
+    switch (eventType){
+      case 'click':
+        this.keys[this.keys.length] = new Click(delay, options, this);
+        break;
+
+      case 'scroll':
+        this.keys[this.keys.length] = new Scroll(delay, options, this);
+        break;
+
+      case 'hover':
+        this.keys[this.keys.length] = new Hover(delay, options, this);
+        break;
+
+      case 'leave':
+        this.keys[this.keys.length] = new Leave(delay, options, this);
+        break;
+    }
   }
 
   executeTimeline(i){
     var i = i || 0;
+    if(i === 0) this.moveMouse();
     if (i >= this.keys.length) return;
     this.keys[i].executeKey(this, i+1);
   }
 
 
-  /*
-  ** Event emulator
-  */
+  // /*
+  // ** Event emulator
+  // */
 
-  getEventTrigger(eventtype, options){
-    var self = this;
-    switch (eventtype){
-      case 'click':
-        return function(){
-          var click =  new MouseEvent("click", {
-            bubbles: true,
-            cancelable: false,
-            view: window
-          });
-          options.target.dispatchEvent(click);
-        };
-        break;
+  // getEventTrigger(eventtype, options){
+  //   var self = this;
+  //   switch (eventtype){
+  //     case 'click':
+  //       return function(){
+  //         var click =  new MouseEvent("click", {
+  //           bubbles: true,
+  //           cancelable: false,
+  //           view: window
+  //         });
+  //         options.target.dispatchEvent(click);
+  //       };
+  //       break;
 
-      case 'scroll':
-        var scroll = new SmoothScroll();
-        return function(){
-          scroll.animateScroll( options.scrollTo, null, {speed: options.duration});
-        };
-        break;
+  //     case 'scroll':
+  //       var scroll = new SmoothScroll();
+  //       return function(){
+  //         scroll.animateScroll( options.scrollTo, null, {speed: options.duration});
+  //       };
+  //       break;
 
-      case 'hover':
-        return function(){
-          // var styles = self.styles.filter(function(row){
-          //   return row.selectorText.indexOf(options.target.tagName.toLowerCase()+":hover") !== -1
-          // });
-          // for (var i = 0; i < styles.length; i++) { // for each matching selector
-          //   for (var j = 0; j < styles[i].style.length; j++) { // for each property
-          //     var cssProperty = styles[i].style[j];
-          //     options.target.style[cssProperty] = styles[i].style[cssProperty];
-          //   }
-          // }
-          // self.cursor.className = "hover";
-          // self.hoveredElement = options.target;
-        }
-        break;
+  //     case 'hover':
+  //       return function(){
+  //         // var styles = self.styles.filter(function(row){
+  //         //   return row.selectorText.indexOf(options.target.tagName.toLowerCase()+":hover") !== -1
+  //         // });
+  //         // for (var i = 0; i < styles.length; i++) { // for each matching selector
+  //         //   for (var j = 0; j < styles[i].style.length; j++) { // for each property
+  //         //     var cssProperty = styles[i].style[j];
+  //         //     options.target.style[cssProperty] = styles[i].style[cssProperty];
+  //         //   }
+  //         // }
+  //         // self.cursor.className = "hover";
+  //         // self.hoveredElement = options.target;
+  //       }
+  //       break;
 
-      case 'leave':
-        return function(){
-          if(! self.hoveredElement) return;
-          self.hoveredElement.style = "";
-          self.cursor.className = "";
-          self.moveMouse(undefined, undefined, 1000);
-        }
-        break;
-    }
-  };
+  //     case 'leave':
+  //       return function(){
+  //         if(! self.hoveredElement) return;
+  //         self.hoveredElement.style = "";
+  //         self.cursor.className = "";
+  //         self.moveMouse(undefined, undefined, 1000);
+  //       }
+  //       break;
+  //   }
+  // };
 
 }
 
@@ -229,20 +247,20 @@ class TimelineEventsTrigger {
 
 class Key {
 
-  constructor(eventType, delay, options, parent){
-    this.eventType = eventType;
+  constructor(delay, options, parent){
     this.delay = delay || 1000;
     this.options = options || {};
     this.parent = parent;
+    console.log(this.parent);
+    this.prior = false;
   }
 
   executeKey(cb, index){
     var self = this;
-    self.parent.moveMouse();
-    var eventtype = this.eventType;
     var options = this.options;
-    var trigger = this.parent.getEventTrigger(eventtype, options);
-    if(eventtype === 'hover') {
+    var trigger = this.getEventTrigger(options);
+    console.log(this);
+    if(self.prior) {
       window.setTimeout(function(){
         self.parent.moveMouse(
         options.target.offsetLeft + (options.target.offsetWidth / 2),
@@ -258,3 +276,52 @@ class Key {
   }
 
 };
+
+class Click extends Key {
+  constructor(){
+    super();
+  }
+  getEventTrigger(options){
+    return function(){
+      var click =  new MouseEvent("click", {
+        bubbles: true,
+        cancelable: false,
+        view: window
+      });
+      options.target.dispatchEvent(click);
+    };
+  }
+}
+
+class Scroll extends Key {
+  constructor(){
+    super();
+  }
+  getEventTrigger(options){
+    var scroll = new SmoothScroll();
+    return function(){
+      scroll.animateScroll( options.scrollTo, null, {speed: options.duration});
+    };
+  }
+}
+
+class Hover extends Key {
+  constructor(){
+    super();
+    this.prior = true;
+  }
+  getEventTrigger(options){
+    return function(){
+    }
+  }
+}
+
+class Leave extends Key {
+  constructor(){
+    super();
+  }
+  getEventTrigger(options){
+    return function(){
+    }
+  }
+}
