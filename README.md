@@ -21,7 +21,7 @@ let options = {
 timeline.addKey(scroll, 2000, options)
 ```
 
-##Supported events
+## Supported events
 
 Scroll
 ```
