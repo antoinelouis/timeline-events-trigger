@@ -16,58 +16,60 @@ export default class TimelineEventsTrigger {
       var elements = style.selectorText
               .trim(style.selectorText.indexOf('{'))
               .split(', ')
-              .filter( pseudoClass => {return pseudoClass.indexOf('hover') !== -1} )
-              .map( selector => {
+              .filter(pseudoClass => {return pseudoClass.indexOf('hover') !== -1} )
+              .map(selector => {
                 selector = selector.slice(0, selector.indexOf(':'));
                 return Array.prototype.slice.call(document.querySelectorAll(selector));
               });
       if (elements[0].length) {
-        elements[0].forEach( el => {self.hoverElements.push(el)});
+        elements[0].forEach(el => {self.hoverElements.push(el)});
       }
     })
-    this.hoverPositions = self.hoverElements.map(function(el){
-      var pos = {};
-      pos.target = el;
-      pos.top = el.offsetTop;
-      pos.bottom = pos.top + el.offsetHeight;
-      pos.left = el.offsetLeft;
-      pos.right = pos.left + el.offsetWidth;
-      return pos;
+    this.hoverPositions = self.hoverElements.map(el => {
+      return {
+        target : el,
+        top    : el.offsetTop,
+        bottom : el.offsetTop + el.offsetHeight,
+        left   : el.offsetLeft,
+        right  : el.offsetLeft + el.offsetWidth
+      };
     });
-
     this.cursor = document.createElement('DIV');
     this.cursor.id = "timelinecursor";
     document.body.appendChild(this.cursor);
   }
 
   moveMouse(x = this.options.defaultMousePos.x, y = this.options.defaultMousePos.y, t = 0){
-    var self = this;
-    var startX = self.cursor.offsetLeft;
-    var startY = self.cursor.offsetTop;
-    var start = null;
+    let self = this;
+    let startX = self.cursor.offsetLeft;
+    let startY = self.cursor.offsetTop;
+    let start = null;
 
     function step(timestamp) {
       if (!start) start = timestamp;
-      var progress = t === 0 ? 1 : Math.min((timestamp - start) / t, 1);
-      var delta = EasingFunctions.easeOutQuad(progress);
-      var scroll = window.pageYOffset
-      var left = Math.floor(startX - (startX - x) * delta);
-      var top = Math.floor(startY - (startY - y) * delta);
+      let progress = t === 0 ? 1 : Math.min((timestamp - start) / t, 1);
+      let delta = EasingFunctions.easeOutQuad(progress);
+      let scroll = window.pageYOffset
+      let left = Math.floor(startX - (startX - x) * delta);
+      let top = Math.floor(startY - (startY - y) * delta);
+      self.cursor.style.left = left + 'px';
+      self.cursor.style.top = top + 'px';
       // check if any hoverable element has matching position with the mouse
-      var hoveredEl = self.hoverPositions.find(function(element) {
+      let hoveredEl = self.hoverPositions.find(function(element) {
         return element.top - scroll < top
             && top < element.bottom - scroll
             && element.left < left
             && left < element.right;
       });
-      self.cursor.style.left = left + 'px';
-      self.cursor.style.top = top + 'px';
       if (hoveredEl && hoveredEl.target !== self.hoveredElement) {
         self.hover(hoveredEl.target);
+        self.cursor.className = "hover";
       } else if (! hoveredEl) {
-        self.hoverElements.forEach(function(el){
-          el.style = "";
-        })
+        if (self.hoveredElement) {
+          self.hoveredElement.style = "";
+          self.hoveredElement = null;
+        }
+        self.cursor.className = "";
       };
       if (progress < 1) {
         window.requestAnimationFrame(step);
@@ -76,7 +78,7 @@ export default class TimelineEventsTrigger {
     window.requestAnimationFrame(step);
   }
 
-  storeHoverStyle() {
+  storeHoverStyle() { // TODO needs some refactor
     var styles = document.styleSheets;
     var stylesLength = styles.length;
     var hoverRules = [];
@@ -92,7 +94,7 @@ export default class TimelineEventsTrigger {
     return hoverRules;
   }
 
-  hover(target) {
+  hover(target) { // TODO needs some refactor
     var styles = this.styles.filter(function(row){
       return row.selectorText.indexOf(target.tagName.toLowerCase()+":hover") !== -1
     });
@@ -102,27 +104,23 @@ export default class TimelineEventsTrigger {
         target.style[cssProperty] = styles[i].style[cssProperty];
       }
     }
-    this.cursor.className = "hover";
     this.hoveredElement = target;
   }
 
-  addKey(eventType, delay, options) {
-    var self = this;
+  addKey(eventType, delay, options) { // TODO reduce the verbose
+    let self = this;
     switch (eventType){
       case 'click':
-        this.keys[this.keys.length] = new Click(delay, options, this);
+        this.keys.push(new Click(delay, options, this));
         break;
-
       case 'scroll':
-        this.keys[this.keys.length] = new Scroll(delay, options, this);
+        this.keys.push(new Scroll(delay, options, this));
         break;
-
       case 'hover':
-        this.keys[this.keys.length] = new Hover(delay, options, this);
+        this.keys.push(new Hover(delay, options, this));
         break;
-
       case 'leave':
-        this.keys[this.keys.length] = new Leave(delay, options, this);
+        this.keys.push(new Leave(delay, options, this));
         break;
     }
   }
@@ -152,9 +150,9 @@ class Key {
   }
 
   executeKey(cb, index){
-    var self = this;
-    var options = this.options;
-    var trigger = this.getEventTrigger(options);
+    let self = this;
+    let options = this.options;
+    let trigger = this.getEventTrigger(options);
     if(self.prior) {
       window.setTimeout(function(){
         self.parent.moveMouse(
