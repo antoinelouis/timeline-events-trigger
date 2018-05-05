@@ -16,15 +16,13 @@ export default class TimelineEventsTrigger {
       var elements = style.selectorText
               .trim(style.selectorText.indexOf('{'))
               .split(', ')
-              .filter(function(pseudoClass){
-                return pseudoClass.indexOf('hover') !== -1;
-              })
-              .map(function(selector){
+              .filter( pseudoClass => {return pseudoClass.indexOf('hover') !== -1} )
+              .map( selector => {
                 selector = selector.slice(0, selector.indexOf(':'));
                 return Array.prototype.slice.call(document.querySelectorAll(selector));
               });
       if (elements[0].length) {
-        elements[0].forEach(function(el){self.hoverElements.push(el)});
+        elements[0].forEach( el => {self.hoverElements.push(el)});
       }
     })
     this.hoverPositions = self.hoverElements.map(function(el){
