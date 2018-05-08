@@ -107,8 +107,7 @@ export default class TimelineEventsTrigger {
     this.hoveredElement = target;
   }
 
-  addKey(eventType, delay, options) { // TODO reduce the verbose
-    let self = this;
+  addKey(eventType, delay, options) { // TODO reduce the verbose if possible
     switch (eventType){
       case 'click':
         this.keys.push(new Click(delay, options, this));
@@ -133,7 +132,6 @@ export default class TimelineEventsTrigger {
   }
 
 }
-
 
 
 /*
